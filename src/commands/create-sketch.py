@@ -7,7 +7,6 @@
 #
 #############################################################################
 
-
 import click
 
 from src.settings.app_cfg import INO_TEMPLATES
@@ -21,10 +20,11 @@ from src.settings.app_cfg import INO_TEMPLATES
   default='esp32',
   help='Arduino template type')
 @click.option('-o', '--output', 'opt_output', required=True,
-  help='Output sketcch directory')
+  help='Output sketch directory')
 @click.option('--max-networks', 'opt_max_networks', 
-  type=click.IntRange(1,30),
-  default=10)
+  type=click.IntRange(1,100),  # Increased max range to 100
+  default=None,  # Changed default to None to handle all networks
+  help='Maximum number of networks to include (default: all)')
 @click.option('--max-rssi', 'opt_max_rssi', default=-30)
 @click.option('--min-rssi', 'opt_min_rssi', default=-100)
 @click.option('-c', '--channel', 'opt_channels', multiple=True,
@@ -35,7 +35,7 @@ from src.settings.app_cfg import INO_TEMPLATES
 def cli(ctx, opt_input, opt_board, opt_output, opt_max_networks,
   opt_max_rssi, opt_min_rssi, opt_channels, opt_wifi_dbm):
   """Creates new Arduino sketch from template"""
-  
+
   from os.path import join
   from pathlib import Path
   import shutil
@@ -65,7 +65,7 @@ def cli(ctx, opt_input, opt_board, opt_output, opt_max_networks,
   networks = load_json(opt_input, data_class=Networks)
   wifi_nets = networks.get_networks(min_rssi=opt_min_rssi, 
     max_rssi=opt_max_rssi, 
-    max_networks=opt_max_networks)
+    max_networks=opt_max_networks)  # Now passes None by default
 
   # read template files
   t = load_txt(fp_dst, as_list=False)
@@ -102,8 +102,8 @@ def cli(ctx, opt_input, opt_board, opt_output, opt_max_networks,
   bssids = ['byte bssids[NN][6] = {']
   ssid_lengths = ['uint8_t ssid_lengths[NN] = {']
   for wifi_net in wifi_nets:
-    ssids.append(f'\t"{wifi_net.ssid}", ')
-    ssid_lengths.append(f'\t{len(wifi_net.ssid)}, ')
+    ssids.append(f'\t"{wifi_net.ssid or ""}", ')  # Handle None ssids
+    ssid_lengths.append(f'\t{len(wifi_net.ssid or "")}, ')  # Handle None ssids
     bssids.append(f'\t{wifi_net.bssid_as_hex_list_ino()}, ')
   ssids.append('};')
   bssids.append('};')
@@ -135,6 +135,5 @@ def cli(ctx, opt_input, opt_board, opt_output, opt_max_networks,
 
   # write sketch data
   write_txt(fp_dst, t)
-
 
   LOG.info(f'Created "{opt_output}" with {len(wifi_nets)} wifi networks')

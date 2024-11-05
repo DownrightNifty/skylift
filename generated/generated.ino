@@ -1,0 +1,527 @@
+/*
+  PARALLEL ARTIFACTS
+  https://ahprojects.com/parallel-artifacts
+  Adam Harvey 2022
+*/
+
+// Auto-generated from: 
+
+#include "display.h"
+
+byte bssid[6] = {};        // store next bssid
+uint8_t ncounter = 0;      // network counter
+uint8_t ch_counter = 0;    // channel increment counter
+uint8_t loop_counter = 0;  // loop counter interval for changing channel
+uint8_t ssid_len = 0;      // holder for ssid length
+uint8_t channel_pre = 0;
+uint8_t packet_length = 0;
+
+// beacon interval is 100.24 milliseconds (0x64)
+unsigned long beacon_interval_us = 102400;
+unsigned long last_beacon_us = 0;
+char* hidden_ssid = "\x00";  // 0-length SSID (Network name unavailable)
+#define NUM_TS_PLACES 8
+byte time_packet[NUM_TS_PLACES];  // placeholder for timestamp data#define NUM_TS_PLACES 8
+char cc[2];                       // placeholer for timestamp data
+
+float WIFI_POWER_DBM = 19.5;  // ESP8266 only
+
+
+
+
+// ---------------------------------------------------------
+// START template data
+// ---------------------------------------------------------
+#define ESP32 1
+
+#ifdef ESP32
+#include "WiFi.h"
+extern "C" {
+#include "esp_wifi.h"
+  esp_err_t esp_wifi_set_channel(uint8_t primary, wifi_second_chan_t second);
+  esp_err_t esp_wifi_80211_tx(wifi_interface_t ifx, const void* buffer, int len, bool en_sys_seq);
+}
+#else
+#include <ESP8266WiFi.h>
+extern "C" {
+#include "user_interface.h"
+}
+#endif
+
+// #define USE_HIDDEN_SSIDS
+
+#define NN 100
+char* ssids[NN] = {
+	"lighthouse", 
+	"0024b10000020c26", 
+	"fbguest", 
+	"lighthouse", 
+	"lighthouse", 
+	"lighthouse", 
+	"fbguest", 
+	"lighthouse", 
+	"fbguest", 
+	"lighthouse", 
+	"fbguest", 
+	"fbguest", 
+	"lighthouse", 
+	"", 
+	"fbatc", 
+	"fbguest", 
+	"lighthouse", 
+	"fbguest", 
+	"fbguest", 
+	"fbguest", 
+	"lighthouse", 
+	"lighthouse", 
+	"", 
+	"fbguest", 
+	"", 
+	"lighthouse", 
+	"fbguest", 
+	"lighthouse", 
+	"lighthouse", 
+	"fbguest", 
+	"Terragraph", 
+	"HUAWEI P9 Plus", 
+	"", 
+	"Terragraph", 
+	"fbguest", 
+	"fbguest", 
+	"fbguest", 
+	"", 
+	"lighthouse", 
+	"", 
+	"", 
+	"lighthouse", 
+	"", 
+	"lighthouse", 
+	"UNITE-79F7", 
+	"fbguest", 
+	"lighthouse", 
+	"", 
+	"", 
+	"Cogenra-FBII", 
+	"", 
+	"lighthouse", 
+	"", 
+	"", 
+	"fbguest", 
+	"lighthouse", 
+	"lighthouse", 
+	"Terragraph", 
+	"", 
+	"BVDC", 
+	"Terragraph", 
+	"AndroidAPCAA3", 
+	"Terragraph", 
+	"Terragraph", 
+	"Terragraph", 
+	"fbguest", 
+	"AndroidAPch", 
+	"Terragraph", 
+	"lighthouse", 
+	"fbguest", 
+	"fbguest", 
+	"fbguest", 
+	"fbguest", 
+	"fbguest", 
+	"fbguest", 
+	"fbguest", 
+	"fbguest", 
+	"Terragraph", 
+	"fbguest", 
+	"fbguest", 
+	"fbguest", 
+	"lighthouse", 
+	"Terragraph", 
+	"Terragraph", 
+	"0024b10000020050", 
+	"fbguest", 
+	"fbguest", 
+	"Terragraph", 
+	"TEST4SANJOSE@404", 
+	"Terragraph", 
+	"Terragraph", 
+	"fbguest", 
+	"fbguest", 
+	"fbguest", 
+	"XFINITY", 
+	"", 
+	"", 
+	"", 
+	"XFINITY", 
+	"", 
+};
+uint8_t ssid_lengths[NN] = {
+	10, 
+	16, 
+	7, 
+	10, 
+	10, 
+	10, 
+	7, 
+	10, 
+	7, 
+	10, 
+	7, 
+	7, 
+	10, 
+	0, 
+	5, 
+	7, 
+	10, 
+	7, 
+	7, 
+	7, 
+	10, 
+	10, 
+	0, 
+	7, 
+	0, 
+	10, 
+	7, 
+	10, 
+	10, 
+	7, 
+	10, 
+	14, 
+	0, 
+	10, 
+	7, 
+	7, 
+	7, 
+	0, 
+	10, 
+	0, 
+	0, 
+	10, 
+	0, 
+	10, 
+	10, 
+	7, 
+	10, 
+	0, 
+	0, 
+	12, 
+	0, 
+	10, 
+	0, 
+	0, 
+	7, 
+	10, 
+	10, 
+	10, 
+	0, 
+	4, 
+	10, 
+	13, 
+	10, 
+	10, 
+	10, 
+	7, 
+	11, 
+	10, 
+	10, 
+	7, 
+	7, 
+	7, 
+	7, 
+	7, 
+	7, 
+	7, 
+	7, 
+	10, 
+	7, 
+	7, 
+	7, 
+	10, 
+	10, 
+	10, 
+	16, 
+	7, 
+	7, 
+	10, 
+	16, 
+	10, 
+	10, 
+	7, 
+	7, 
+	7, 
+	7, 
+	0, 
+	0, 
+	0, 
+	7, 
+	0, 
+};
+
+byte bssids[NN][6] = {
+	{0x18, 0x64, 0x72, 0x60, 0x36, 0x40}, 
+	{0x00, 0x24, 0xB1, 0x02, 0x0C, 0x26}, 
+	{0x18, 0x64, 0x72, 0x60, 0x3E, 0x51}, 
+	{0x18, 0x64, 0x72, 0x60, 0x82, 0x70}, 
+	{0x18, 0x64, 0x72, 0x60, 0x36, 0xF0}, 
+	{0x18, 0x64, 0x72, 0x60, 0xEB, 0x30}, 
+	{0x18, 0x64, 0x72, 0x60, 0x30, 0x11}, 
+	{0x00, 0x24, 0x6C, 0x59, 0x32, 0x99}, 
+	{0x00, 0x24, 0x6C, 0x59, 0x32, 0x9A}, 
+	{0x9C, 0x1C, 0x12, 0x95, 0x57, 0xB0}, 
+	{0x18, 0x64, 0x72, 0x60, 0x36, 0x51}, 
+	{0x04, 0xBD, 0x88, 0x56, 0xDA, 0x50}, 
+	{0x04, 0xBD, 0x88, 0x56, 0xDA, 0x51}, 
+	{0x18, 0x64, 0x72, 0x60, 0x2E, 0xB2}, 
+	{0x18, 0x64, 0x72, 0x60, 0x46, 0x43}, 
+	{0x18, 0x64, 0x72, 0x60, 0x3F, 0x61}, 
+	{0x18, 0x64, 0x72, 0x60, 0x40, 0x50}, 
+	{0x18, 0x64, 0x72, 0x60, 0x40, 0x51}, 
+	{0x18, 0x64, 0x72, 0x60, 0x39, 0xB1}, 
+	{0x04, 0xBD, 0x88, 0x57, 0x09, 0xD0}, 
+	{0x18, 0x64, 0x72, 0x60, 0x84, 0x90}, 
+	{0x18, 0x64, 0x72, 0x60, 0x46, 0x50}, 
+	{0x18, 0x64, 0x72, 0x60, 0x46, 0x52}, 
+	{0x18, 0x64, 0x72, 0x60, 0x69, 0x51}, 
+	{0x18, 0x64, 0x72, 0x60, 0x69, 0x52}, 
+	{0x00, 0x24, 0x6C, 0x59, 0xED, 0xB8}, 
+	{0x00, 0x24, 0x6C, 0x59, 0xED, 0xBA}, 
+	{0x18, 0x64, 0x72, 0x60, 0x36, 0x50}, 
+	{0x9C, 0x1C, 0x12, 0x95, 0x57, 0xA0}, 
+	{0x18, 0x64, 0x72, 0x60, 0x2E, 0xB1}, 
+	{0x1C, 0xB9, 0xC4, 0x35, 0x52, 0xFC}, 
+	{0x02, 0x1A, 0x11, 0xFD, 0x6B, 0xBA}, 
+	{0x18, 0x64, 0x72, 0x60, 0xEB, 0xF2}, 
+	{0x1C, 0xB9, 0xC4, 0x32, 0x8C, 0x3C}, 
+	{0x04, 0xBD, 0x88, 0x57, 0x09, 0xC0}, 
+	{0x18, 0x64, 0x72, 0x60, 0x33, 0x61}, 
+	{0x18, 0x64, 0x72, 0x60, 0x74, 0xD1}, 
+	{0x18, 0x64, 0x72, 0x33, 0x6A, 0x32}, 
+	{0x18, 0x64, 0x72, 0x60, 0xEB, 0x70}, 
+	{0x18, 0x64, 0x72, 0x60, 0xEC, 0xD2}, 
+	{0x18, 0x64, 0x72, 0x60, 0x6E, 0xF2}, 
+	{0x18, 0x64, 0x72, 0x60, 0x6E, 0xE0}, 
+	{0x18, 0x64, 0x72, 0x33, 0x6C, 0xC2}, 
+	{0x18, 0x64, 0x72, 0x39, 0xB1, 0x10}, 
+	{0x08, 0xBD, 0x43, 0x2E, 0x79, 0xF7}, 
+	{0x18, 0x64, 0x72, 0x60, 0xE3, 0x51}, 
+	{0x18, 0x64, 0x72, 0x33, 0xD0, 0xB0}, 
+	{0x18, 0x64, 0x72, 0x33, 0xD4, 0x02}, 
+	{0x18, 0x64, 0x72, 0x60, 0x77, 0xC2}, 
+	{0x00, 0x30, 0x44, 0x13, 0xEE, 0xDC}, 
+	{0x18, 0x64, 0x72, 0x33, 0xD4, 0x12}, 
+	{0x18, 0x64, 0x72, 0x60, 0x74, 0x30}, 
+	{0x18, 0x64, 0x72, 0x60, 0x6D, 0x72}, 
+	{0x18, 0x64, 0x72, 0x60, 0xE3, 0x52}, 
+	{0x94, 0xB4, 0x0F, 0x2B, 0x67, 0x61}, 
+	{0x18, 0x64, 0x72, 0x60, 0x77, 0xD0}, 
+	{0x18, 0x64, 0x72, 0x60, 0x79, 0x10}, 
+	{0x1C, 0xB9, 0xC4, 0x35, 0x54, 0xBC}, 
+	{0x94, 0xB4, 0x0F, 0x2B, 0x67, 0x62}, 
+	{0x00, 0x25, 0x42, 0x82, 0x5B, 0xAA}, 
+	{0x1C, 0xB9, 0xC4, 0x35, 0x54, 0xB8}, 
+	{0xA4, 0x08, 0xEA, 0x72, 0xCA, 0xA3}, 
+	{0x1C, 0xB9, 0xC4, 0x35, 0xAE, 0xCC}, 
+	{0x1C, 0xB9, 0xC4, 0x37, 0x04, 0x08}, 
+	{0x1C, 0xB9, 0xC4, 0x36, 0xF1, 0x1C}, 
+	{0x1C, 0xB9, 0xC4, 0x75, 0x54, 0xBC}, 
+	{0x02, 0x1A, 0x11, 0xF6, 0x73, 0xB9}, 
+	{0x1C, 0xB9, 0xC4, 0x36, 0x5F, 0xBC}, 
+	{0x00, 0x24, 0x6C, 0x59, 0xEC, 0x08}, 
+	{0x00, 0x24, 0x6C, 0x59, 0xEC, 0x0A}, 
+	{0x1C, 0xB9, 0xC4, 0x75, 0x56, 0x0C}, 
+	{0x1C, 0xB9, 0xC4, 0x75, 0xCF, 0xEC}, 
+	{0x1C, 0xB9, 0xC4, 0x75, 0x56, 0x08}, 
+	{0x1C, 0xB9, 0xC4, 0x76, 0xF1, 0x1C}, 
+	{0x1C, 0xB9, 0xC4, 0x75, 0xAE, 0xC8}, 
+	{0x00, 0x24, 0x6C, 0x59, 0x38, 0xFA}, 
+	{0x1C, 0xB9, 0xC4, 0x75, 0x53, 0x5C}, 
+	{0x1C, 0xB9, 0xC4, 0x33, 0xF2, 0x0C}, 
+	{0x1C, 0xB9, 0xC4, 0x75, 0xA1, 0xEC}, 
+	{0x1C, 0xB9, 0xC4, 0x76, 0x60, 0x28}, 
+	{0x1C, 0xB9, 0xC4, 0x76, 0x5F, 0xBC}, 
+	{0x00, 0x24, 0x6C, 0x59, 0x38, 0xF8}, 
+	{0x1C, 0xB9, 0xC4, 0x35, 0xAF, 0x0C}, 
+	{0x1C, 0xB9, 0xC4, 0x33, 0xCB, 0xA8}, 
+	{0x00, 0x24, 0xB1, 0x02, 0x00, 0x50}, 
+	{0x1C, 0xB9, 0xC4, 0x77, 0x04, 0x0C}, 
+	{0x1C, 0xB9, 0xC4, 0x73, 0xBA, 0xD8}, 
+	{0x1C, 0xB9, 0xC4, 0x33, 0xFE, 0x3C}, 
+	{0x1C, 0xB9, 0xC4, 0x34, 0x02, 0x78}, 
+	{0x1C, 0xB9, 0xC4, 0x33, 0x9C, 0x08}, 
+	{0x1C, 0xB9, 0xC4, 0x34, 0x4D, 0x7C}, 
+	{0x1C, 0xB9, 0xC4, 0x75, 0x95, 0x88}, 
+	{0x18, 0x64, 0x72, 0x60, 0x39, 0xF1}, 
+	{0x1C, 0xB9, 0xC4, 0x75, 0xAE, 0x88}, 
+	{0x14, 0xDD, 0xA9, 0x15, 0x84, 0xBB}, 
+	{0x88, 0x15, 0x44, 0xAA, 0x1E, 0x65}, 
+	{0x9E, 0x15, 0x44, 0xAA, 0x1E, 0x11}, 
+	{0x8A, 0x15, 0x54, 0xAA, 0x1E, 0x3A}, 
+	{0x8C, 0x0F, 0x6F, 0xC4, 0x64, 0xDB}, 
+	{0x88, 0x15, 0x44, 0xAA, 0x1E, 0x51}, 
+};
+
+#define N_CHANNELS 13
+byte channels[N_CHANNELS] = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13};
+
+// {{TEMPLATE:DBM_LEVELS
+// TODO
+// TEMPLATE:DBM_LEVELS}}
+
+// ---------------------------------------------------------
+// END template data
+// ---------------------------------------------------------
+
+
+// Variables referencing templated data
+uint8_t channel = channels[0];  // Transmit on this channel
+unsigned long ap_epochs[NN];
+
+// Beacon frame packet structure
+uint8_t packet[128] = {
+  /*0*/ 0x80, 0x00,                                       // Frame Control
+  /*2*/ 0x00, 0x00,                                       // Duration
+  /*4*/ 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,               // Destination address
+  /*10*/ 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,              // Source address - overwritten later
+  /*16*/ 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,              // BSSID - overwritten to the same as the source address
+  /*22*/ 0xc0, 0x6c,                                      // Seq-ctl
+  /*24*/ 0x00, 0x00, 0x00, 0x00, 0x0f, 0x00, 0x00, 0x00,  // Timestamp - the number of microseconds the AP has been active
+  /*32*/ 0x64, 0x00,                                      // Beacon interval = 0.102400 seconds
+                                                          // /*34*/ 0x01, 0x04,                                    // Capability info
+  /*34*/ 0x31, 0x14,                                      // Capability inf
+  /*36*/ 0x00
+  /* SSID is added after here */
+};
+
+uint8_t packet_tail[13] = {
+  0x01, 0x08, 0x82, 0x84, 0x8b, 0x96, 0x24, 0x30, 0x48, 0x6c,  // supported rate
+  0x03, 0x01, 0x04                                             // DSSS (Current Channel)
+};
+
+
+// ---------------------------------------------------------------
+// Convert milliseconds to timestamp for beacon frame
+// ---------------------------------------------------------------
+void get_timestamp(char* times) {
+
+  long t = micros();
+  unsigned int tlen = 8;
+  String time_hex_forward = String(t, HEX);
+
+  while (time_hex_forward.length() < tlen * 2) time_hex_forward = "0" + time_hex_forward;
+  String time_hex_rev = time_hex_forward;  // reversed
+  for (int i = tlen; i > 0; i--) {
+    time_hex_rev[(tlen * 2) - (i * 2)] = time_hex_forward.charAt((i * 2) - 2);      // 1
+    time_hex_rev[(tlen * 2) - (i * 2) + 1] = time_hex_forward.charAt((i * 2) - 1);  // 2
+  }
+  // convert to 8-length byte array
+  for (int i = 0; i < tlen; i++) {
+
+    cc[0] = time_hex_rev.charAt(i * 2);
+    cc[1] = time_hex_rev.charAt((i * 2) + 1);
+    long hex_val = strtol(cc, NULL, 16);
+    times[i] = hex_val;
+  }
+}
+
+void set_timestamp(byte* p, byte n) {
+  // return time in reverse order as byte array pointer
+  long t = millis() + ap_epochs[n];  // random start time
+  p[0] = (t & 0x00000000000000FF);
+  p[1] = (t & 0x000000000000FF00) >> 8;
+  p[2] = (t & 0x0000000000FF0000) >> 16;
+  p[3] = (t & 0x00000000FF000000) >> 24;
+  p[4] = (t & 0x000000FF00000000) >> 32;
+  p[5] = (t & 0x0000FF0000000000) >> 40;
+  p[6] = (t & 0x00FF000000000000) >> 48;
+  p[7] = (t & 0x00FF000000000000) >> 56;
+}
+
+
+long strtol(const char* __nptr, char** __endptr, int __base);  // additional function for string to long conversion
+
+
+// ---------------------------------------------------------------
+// Send the beacon frame
+// ---------------------------------------------------------------
+void send_beacon_frame(uint8_t i, uint8_t c) {
+
+  // Set BSSID
+  memcpy(&bssid, bssids[i], 6);
+  memcpy(&packet[10], bssid, 6);
+  memcpy(&packet[16], bssid, 6);
+
+  // Set SSID
+  ssid_len = ssid_lengths[i];
+  packet[37] = ssid_len;
+  memcpy(&packet[38], ssids[i], ssid_len);
+  memcpy(&packet[38 + ssid_len], packet_tail, 13);
+  packet[50 + ssid_len] = channels[c];
+
+  // store new packet length
+  packet_length = 51 + ssid_len;
+
+  // Send the packet
+#ifdef ESP32
+  esp_wifi_80211_tx(WIFI_IF_STA, packet, packet_length, 0);  // esp32
+#else
+  wifi_send_pkt_freedom(packet, packet_length, 0);  // esp8266
+#endif
+}
+
+
+void change_channel(uint8_t i) {
+#ifdef ESP32
+  // esp_wifi_set_promiscuous(false);
+  esp_wifi_set_channel(channels[i], WIFI_SECOND_CHAN_NONE);  // esp32
+  // esp_wifi_set_promiscuous(true);
+#else
+  wifi_set_channel(channels[i]);                    // esp8266
+#endif
+}
+
+
+// ---------------------------------------------------------------
+// Initialize the ESP8266
+// Set max power and put into promiscious mode
+// ---------------------------------------------------------------
+void setup() {
+  setup_display();
+#ifdef ESP32
+  WiFi.mode(WIFI_MODE_STA);
+  WiFi.setTxPower(WIFI_POWER_19dBm);
+  esp_wifi_set_channel(channels[0], WIFI_SECOND_CHAN_NONE);
+#else
+  WiFi.setOutputPower(WIFI_POWER_DBM);
+  wifi_set_opmode(STATION_MODE);
+  wifi_promiscuous_enable(1);
+#endif
+}
+
+// ---------------------------------------------------------------
+// Transmit Beacon Frame
+// ---------------------------------------------------------------
+void loop() {
+  // Limit to every 100ms
+  if (micros() - last_beacon_us < beacon_interval_us) {
+    return;
+  }
+
+  // change channel every loop
+  loop_counter += 1;
+  if (loop_counter > 10) {
+    ch_counter = (ch_counter + 1) % N_CHANNELS;
+    change_channel(ch_counter);
+    loop_counter = 0;
+  }
+  
+  // Send all ssid packets
+  for (int i = 0; i < NN; i++) {
+    send_beacon_frame(i, ch_counter);
+    delay(1);
+  }
+
+  // update time of broadcast
+  last_beacon_us = micros();
+
+  // display
+  run_display();
+}
