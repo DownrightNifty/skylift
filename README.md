@@ -27,8 +27,10 @@ Tested for Linux Ubuntu 20.04
 
 Python	
 ```
-python -m venv venv
-source venv/bin/activate
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+pip install setuptools
 python setup.py develop
 skylift
 ```
