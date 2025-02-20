@@ -13,6 +13,7 @@
 
 
 import click
+import sys
 
 class ClickSimple:
   """Wrapper generator for custom Click CLI"""
